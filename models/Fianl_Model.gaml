@@ -69,7 +69,7 @@ species birds skills:[moving]{
     	    speed<-rnd(bird_speed_min,bird_speed_max); //#km/#h;
     	    posLocal <- any(the_graph);
     	    BirdDirection<- point(rnd(1,360));
-    	    write(posLocal);
+    	    //write(posLocal);
 				//}
 			
 			}
