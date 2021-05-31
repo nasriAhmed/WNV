@@ -1,20 +1,17 @@
 /**
-* Name: Model3MovLocal
+* Name: Modele01062021
 * Based on the internal empty template. 
 * Author: MSI_Nasri
 * Tags: 
 */
 
-
 model FianlModel_Part1
 
-	
 global{
 	int nb_birds_init <- 100;
 	int nb_birds_sain<-0 update:true;
     int nb_birds_infected <- nb_birds_init update: birds count (each.is_infected);
     int nb_birds_region<-0;
-    //int nb_birds_region <- 0 update: length(self.idRegion);
     bool is_infected <- false;
     int nb_birds_total <-nb_birds_init ;
     
@@ -66,8 +63,7 @@ global{
 			//Random Region 
 	Region Reg;	
 		reflex BirdsInfected when: every(infectMos_time #month) { 
-			Reg<-first(Region(any_location_in((shape))));
-			
+		Reg<-first(Region(any_location_in((shape))));
 		return Reg;	
 		}			
 	
@@ -82,44 +78,23 @@ species birds skills:[moving]{
     Region k_Maxx<-self.my_cell.k_max;
 	point posLocal<-self.location;
 	
-	    	    //write(one_of(self.my_cell.idRegion));
 
 	
     	 //Random movement local of birds Executé           
-    	  reflex IntraRegionalMouvement { 
-    	    do wander ;//aléatoire
+    	reflex IntraRegionalMouvement{ 
+    	  do wander ;//aléatoire
     	    speed<-rnd(bird_speed_min,bird_speed_max); //#km/#h;
     	    posLocal <- any_location_in(shape);
     	    BirdDirection<- point(rnd(1,180));	
     	    do goto(target: posLocal, on:the_graph, speed:speed);  
-			}
-    		
-		//Movement Regional every 5 Month Executé	 + nbre yzid wyone9ss bin les regions
-		reflex InetrRegionalMouvement when: every(regional_time #days ) {
-			//write(my_cell.location);
-		//int reg<-one_of(self.my_cell.idRegion);
-	    nbBirdPropo <- rnd(nb_birds_total); 
-	    //posRegional<-point(Region(any_location_in(one_of(shape))));
-	    do goto(target:my_cell.location,on: shape);
-	    //float test<- birds count(my_cell.location);
-		//write(point(self.my_cell.idRegion));
-		//write(count(self.my_cell.idRegion));
 		}
-		
-				
-			//Reflex yzid wyna9ss en meme temps nbr birds
-		/*reflex MigrationMouvement when: every(migration_time #month ) {	
-    	    nbBirdMigrattion <- rnd(nb_birds_init);
-    	    nb_birds_total<-nb_birds_init + nbBirdMigrattion;
-    	    //speed<-rnd(bird_speed_min,bird_speed_max);
-    	    //BirdDirection<- point(rnd(1,180));
-    	    //Localisation hors the graph
-    	     //do goto(target:my_cell.location,on: shape);
-
-    	    return nb_birds_total;
-		    }*/
-		    
-		
+    		
+		//Movement Regional
+		reflex InetrRegionalMouvement when: every(regional_time #days ){
+	    nbBirdPropo <- rnd(nb_birds_total); 
+	    do goto(target:my_cell.location,on: shape);
+		}
+	
 		reflex migration_in when: every(2 #month ){
 			nbBirdMigrattion <- rnd(nb_birds_init);
 			ask Region{
@@ -166,27 +141,12 @@ species Region {
 	float k_max<-10.0;//le nombre max de most par region
 	point Mos <- nil;
 	image_file mos_icon <- image_file("../includes/mos.png") ;
-	
-	//list<Region> IdRegionID <- Region;
-		//Migration (every 10 Month)
 
 		    	
-				//Generate Mosquitoes: Depend nomber of Region
+			//Generate Mosquitoes: Depend nomber of Region
 		    reflex MostiqueDemo{	
-			//int Mostique <-Region(any_location_in(one_of(shape)));
-			//Mos <- Mostique.location;
-			
-
 			}
-			/*equation MD{ 
-		    diff(x,t) = r*x*(1-x/k_max);
-		    }	
-		   
-		    reflex solving{
-		    	float h<-0.1;
-		    	solve MD method: #rk4 step_size: h;
-		    	return x;
-		    }*/
+
 			
 
 		aspect default{
@@ -202,7 +162,6 @@ species Region {
 				float Mostique_sain<-Mostique-MostiqueI;
 				float nb_birds_infected;
 			nb_mosquitoes_infecte <- (alpha * Mostique_sain * nb_birds_infected);
-			//write(nb_mosquitoes_infecte);
 
 			}
 			return nb_mosquitoes_infecte;
@@ -210,8 +169,7 @@ species Region {
     
     
 		
-}
-			
+}	
 experiment WNV type: gui {
 parameter "Initial number of brids: " var: nb_birds_init min: 1 max: 150 category: "Nombre of Brids" ;
 parameter "Shapefile for the Tunisie Map:" var: provinces_shp_file category: "GIS" ;
