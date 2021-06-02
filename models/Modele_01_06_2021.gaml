@@ -104,7 +104,7 @@ species birds skills:[moving]{
 	      	
 		}
 		//Migration 
-		/*reflex migration_in when: every(3 #month){
+		reflex migration_in when: every(3 #month){
 			nbBirdMigrattion <- rnd(nb_birds_init);		
 			do create;
     	    nb_birds_total<-nb_birds_init + nbBirdMigrattion;
@@ -128,7 +128,7 @@ species birds skills:[moving]{
 			ask birds {
 			  do die;
 			}
-		}*/
+		}
 	
 		
 		//Infected Birds	
@@ -137,14 +137,14 @@ species birds skills:[moving]{
 				ask Region{
 					int Moss<-rnd(k_max);
 						if(Moss<MostiqueI){	
-							write('ici');
+							//write('ici');
 								myself.is_infected <- true;
 						}
 			    }
 			}
 		}
 			aspect base {
-		    draw circle(20) color:is_infected ? #red : #green;
+		    draw triangle(20) color:is_infected? #red : #green;
 			} 
 			
 			  	    	   
@@ -199,19 +199,17 @@ species Region {
 		
 }	
 experiment WNV type: gui {
-parameter "Initial number of brids: " var: nb_birds_init min: 1 max: 150 category: "Nombre of Brids" ;
 parameter "Total number of brids: " var: nb_birds_total min: 1 max: 250 category: "Toatl Nomber of Brids" ;
-
 parameter "Shapefile for the Tunisie Map:" var: provinces_shp_file category: "GIS" ;
 parameter "minimal speed" var: bird_speed_min category: "Speed Birds" min: 10 #km/#h ;
 parameter "maximal speed" var: bird_speed_max category: "Speed Birds" max: 60 #km/#h;
 			
 output {	
 	monitor "Nombre of Intial birds" value: nb_birds_init;
+	monitor "Nombre of Total Birds" value: nb_birds_total;
 	monitor "Nombre of Mosquitoes" value: Mostique ; //nb_mosquitoes ;
 	monitor "Nombre of Infected Mosquitoes" value: MostiqueI ; //nb_mosquitoes ;
-	monitor "Nombre of Infected Birds" value: birds count (each.is_infected) ;
-	monitor "Nombre of Total Birds" value: nb_birds_total;
+	monitor "Nombre of Infected Birds" value: birds count (each.is_infected) color: #red;
 	
 	
     display info_display  type:opengl {
@@ -221,7 +219,7 @@ output {
     display chart_display refresh: every(50 #cycles) {
             chart "Disease spreading" type: series {
                 data "Infected Mosquitoes" value: MostiqueI color: #orange;
-                data "infected Birds" value: nb_birds_infected color: #red;
+                data "infected Birds" value: birds count (each.is_infected) color: #red;
             }
     
 }
