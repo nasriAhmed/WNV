@@ -16,6 +16,7 @@ global{
     int nb_birds_region<- birds count each.my_cell;
    	//bool is_infected <- false;
     int nb_birds_total <-nb_birds_init ;
+    int nb_birds_migration<-1;
     
     //Parameters birds
 	float bird_speed_min <- 1#km / #h;
@@ -28,23 +29,24 @@ global{
 	
 	 //Parameters Environement
 	graph the_graph;		
-	float step <- 10 #mn;
+	float step <- 60 #mn;
 	int regional_time <- 4 ;
 	int migration_time <- 2 ;
-	date starting_date <- date("2021-06-01-00-00-00");	
+	date starting_date <- date("2021-06-03-00-00-00");	
 	//int charge_time <- 30;
 	float alpha<-0.1;  
 	 //mosquitoes
-	int nb_mosquitoes<-24;
-	//int nb_mosquitoes_infecte<-0 update:true;
-	int nb_mosquitoes_sain<-0 update:true;
+
 	int infectMos_time <- 2 ;
-	float Mostique<-10.0;
-	float MostiqueI<-1.0;
+	/*int MostiqueGlobal<-10 update:Region count(each.Mostique);
+	int MostiqueGlobalInfected<-1 update: Region count(each.MostiqueI);
+	int MosquitoesGlobalsain<-0 update: Region count(each.Mostique_sain);*/
 	
+	int MostiqueGlobal<-10 update:true;
+	int MostiqueGlobalInfected<-1 update:true;
+	int MosquitoesGlobalsain<-0 update:true;
 	float t <- step;
-	float r<-0.1;
-	float k<- 200;
+
   
 
 			//Initialisation d'Envireonement
@@ -85,27 +87,25 @@ species birds skills:[moving]{
     //Region k_Maxx<-self.my_cell.k_max;
 	point posLocal<-self.location;
 	float k_max<-10.0;
-
+	int BirdsInfected;
     	 //IntraRegionalMouvement// Random movement local of birds       
     	reflex IntraRegionalMouvement{ 
     	  do wander ;//aléatoire
-    	    speed<-rnd(bird_speed_min,bird_speed_max); //#km/#h;
-    	    posLocal <- any_location_in(shape);
-    	    BirdDirection<- point(rnd(1,180));	
-    	    do goto(target: posLocal, on:the_graph, speed:speed);  
+    	  speed<-rnd(bird_speed_min,bird_speed_max); //#km/#h;
+    	  posLocal <- any_location_in(shape);
+    	  BirdDirection<- point(rnd(1,180));	
+    	  do goto(target: posLocal, on:the_graph, speed:speed);  
 		}
-    		
 		//InetrRegionalMouvement
-		reflex InetrRegionalMouvement when: every(regional_time #month){
+		reflex InetrRegionalMouvement when: every(regional_time #days){
 	    nbBirdPropo <- rnd(nb_birds_total);
 		//int nbBirdRegion<-nbBirdPropo update: birds count (self.my_cell.idRegion);
     	   // write(nbBirdRegion);
 	    do goto(target:my_cell.location,on: shape);
-	      	
 		}
 		//Migration 
-		reflex migration_in when: every(3 #month){
-			nbBirdMigrattion <- rnd(nb_birds_init);		
+		/*reflex migration_in when: every(1 #days){
+			nbBirdMigrattion <- rnd(nb_birds_migration);		
 			do create;
     	    nb_birds_total<-nb_birds_init + nbBirdMigrattion;
       	    return nb_birds_total;	
@@ -117,28 +117,31 @@ species birds skills:[moving]{
             location <- my_cell.location;
 		}
 		}
-		reflex migration_out when: every(8 #month){		
-			nbBirdMigrattion <- rnd(nb_birds_init);
+		reflex migration_out when: every(3 #days){		
+			nbBirdMigrattion <- rnd(nb_birds_migration);
 			do delete;
     	    nb_birds_total<-nb_birds_total - nbBirdMigrattion;
-    	   
     	    return nb_birds_total;	
 		}
 		action delete{
 			ask birds {
 			  do die;
 			}
-		}
+		}*/
 	
 		
 		//Infected Birds	
 		reflex bird_infected when:every(infectMos_time #days ) {
 			if(is_infected = false){
-				ask Region{
+				ask self.my_cell{
 					int Moss<-rnd(k_max);
 						if(Moss<MostiqueI){	
+							if flip(0.02) {
 							//write('ici');
-								myself.is_infected <- true;
+								myself.is_infected <- true ;
+
+						}
+						
 						}
 			    }
 			}
@@ -152,54 +155,66 @@ species birds skills:[moving]{
 		//espace region
 species Region {
 	int idRegion<- shape['ID_1'];
+	string Nomregion<-shape['NAME_1'];
 	rgb mycolor<-#grey;	
 	int cnt <-0;
 	//int Mostiquee;
 	float k_max<-10.0;//le nombre max de most par region
 	point Mos <- nil;
 	image_file mos_icon <- image_file("../includes/mos.png") ;
-
+	float r<-0.1;
+	float k<- rnd(200);
+	int dt<-rnd(60);
+	float Mostique<-10.0 update:true;
+	float MostiqueI<-1.0 update:true;
+	float Mostique_sain ;
+	birds my_Birds <- birds;
+	int nb_birds;
+	int nb_birds_infected;
+	int nb_birds_sain;
 		    	
 			//Generate 24 Mos
 			init{
 			int Mostiquee <-Region(any_location_in(one_of(shape)));
 		   	Mos <- self.location;	
+		   			
+		   	//write(my_Birds);
 			}
+			
+			
 		   equation MD{
 		   diff(Mostique,t) = r*Mostique*(1-Mostique/k);
-		   }
-		 
+		   }		 
 		   reflex solving{
-		   solve MD method: #rk4 step_size: 39;
-		    return Mostique;
+		   solve MD method: #rk4 step_size: dt;
+		   return self.Mostique;
 		   }
+		    
+	    	//Infected Mosquitoes	
+		    reflex MostiqueEpidemie when: every(infectMos_time #month) {
+			ask Region{
+			if(self.MostiqueI < self.Mostique){
+			self.Mostique_sain<-self.Mostique-self.MostiqueI;
+			self.MostiqueI <-(alpha * self.Mostique_sain * self.nb_birds_infected);
 
+			return self.MostiqueI;
+			}
+			}
+			
+		}
+    
 			
 
 		aspect default{
 		    draw shape color: mycolor border: #black;
 		    draw Mos  color: #orange;
 		    }
-		    
-	    	//Infected Mosquitoes	
-		    reflex MostiqueEpidemie when: every(infectMos_time #month) {
-			ask Region{
-			if(MostiqueI < Mostique){
-			float Mostique_sain<-Mostique-MostiqueI;
-			MostiqueI <-(alpha * Mostique_sain * nb_birds_infected);
-
-			return MostiqueI;
-			}
-			}
-			
-		
-		}
-    
     
 		
 }	
 experiment WNV type: gui {
 parameter "Total number of brids: " var: nb_birds_total min: 1 max: 250 category: "Toatl Nomber of Brids" ;
+parameter "Number of migration brids: " var: nb_birds_migration min: 1 max: 200 category: "Toatl Nomber of Brids" ;
 parameter "Shapefile for the Tunisie Map:" var: provinces_shp_file category: "GIS" ;
 parameter "minimal speed" var: bird_speed_min category: "Speed Birds" min: 10 #km/#h ;
 parameter "maximal speed" var: bird_speed_max category: "Speed Birds" max: 60 #km/#h;
@@ -207,8 +222,8 @@ parameter "maximal speed" var: bird_speed_max category: "Speed Birds" max: 60 #k
 output {	
 	monitor "Nombre of Intial birds" value: nb_birds_init;
 	monitor "Nombre of Total Birds" value: nb_birds_total;
-	monitor "Nombre of Mosquitoes" value: Mostique ; //nb_mosquitoes ;
-	monitor "Nombre of Infected Mosquitoes" value: MostiqueI ; //nb_mosquitoes ;
+	monitor "Nombre of Mosquitoes" value: MostiqueGlobal ; //nb_mosquitoes ;
+	monitor "Nombre of Infected Mosquitoes" value: MostiqueGlobalInfected ; //nb_mosquitoes ;
 	monitor "Nombre of Infected Birds" value: birds count (each.is_infected) color: #red;
 	
 	
@@ -218,12 +233,34 @@ output {
     }
     display chart_display refresh: every(50 #cycles) {
             chart "Disease spreading" type: series {
-                data "Infected Mosquitoes" value: MostiqueI color: #orange;
+                data "Infected Mosquitoes" value: MostiqueGlobalInfected color: #orange;
                 data "infected Birds" value: birds count (each.is_infected) color: #red;
             }
-    
+            }
+    display "Statistic par région" {   
+			chart 'Nord EST' type: series {
+				Region r1 <-first(Region where (each.Nomregion = 'Tunis'));
+				Region r2 <-first(Region where (each.Nomregion = 'Ariana'));
+				//Region r3 <-first(Region where (each.Nomregion = 'Manubah'));
+				//Region r4 <-first(Region where (each.Nomregion = 'Ben Arous (Tunis Sud)'));
+				//Region r5 <-first(Region where (each.Nomregion = 'Zaghouan'));
+			//	Region r6 <-first(Region where (each.Nomregion = 'Nabeul')); 
+				//data "Nombre Mos Infected Tunis" value: r1.MostiqueI  color: #pink;
+				data "Nombre Mos Tunis" value: r1.Mostique  color: #orange marker_shape:  marker_circle;
+				data "Nombre Mos Ariana" value: r2.Mostique  color: #green marker_shape:  marker_circle;
+			
+			}
+			/*chart 'Manubah' type: series {
+				Region r1 <- first(Region where (each.Nomregion = 'Tunis'));
+				data "Nombre Mos Tunis" value: r1.Mostique color: #pink;
+				//data "Somme Mos Tunis" value: sum(r1.Mostique) color: #red;
+				//data "Somme Mos Infected Tunis" value:Region count(each.Mostique) color: #green;
+				}*/
+			
+
 }
 
 }
 }
+
 
