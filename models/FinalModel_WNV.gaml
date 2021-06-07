@@ -5,7 +5,7 @@
 * Tags: 
 */
 
-model FianlModel_Part1
+model FianlModel
 
 global{
 	int nb_birds_init <- 100;
@@ -32,18 +32,18 @@ global{
 	float step <- 60 #mn;
 	int regional_time <- 4 ;
 	int migration_time <- 2 ;
-	date starting_date <- date("2021-06-03-00-00-00");	
+	date starting_date <- date("2021-06-05-00-00-00");	
 	//int charge_time <- 30;
 	float alpha<-0.1;  
 	 //mosquitoes
 
 	int infectMos_time <- 2 ;
-	/*int MostiqueGlobal<-10 update:Region count(each.Mostique);
-	int MostiqueGlobalInfected<-1 update: Region count(each.MostiqueI);
-	int MosquitoesGlobalsain<-0 update: Region count(each.Mostique_sain);*/
+	//int MostiqueGlobal<-10 update:Region count(each.Mostique);
+	//int MostiqueGlobalInfected<-1 update: Region count(each.MostiqueI);
+	/*int MosquitoesGlobalsain<-0 update: Region count(each.Mostique_sain);*/
 	
-	int MostiqueGlobal<-10 update:true;
-	int MostiqueGlobalInfected<-1 update:true;
+	float MostiqueGlobal<-10 update:true;
+	float MostiqueGlobalInfected<-1.0 update:true;
 	int MosquitoesGlobalsain<-0 update:true;
 	float t <- step;
 
@@ -104,7 +104,7 @@ species birds skills:[moving]{
 	    do goto(target:my_cell.location,on: shape);
 		}
 		//Migration 
-		/*reflex migration_in when: every(1 #days){
+		reflex migration_in when: every(1 #days){
 			nbBirdMigrattion <- rnd(nb_birds_migration);		
 			do create;
     	    nb_birds_total<-nb_birds_init + nbBirdMigrattion;
@@ -127,7 +127,7 @@ species birds skills:[moving]{
 			ask birds {
 			  do die;
 			}
-		}*/
+		}
 	
 		
 		//Infected Birds	
@@ -164,13 +164,13 @@ species Region {
 	image_file mos_icon <- image_file("../includes/mos.png") ;
 	float r<-0.1;
 	float k<- rnd(200);
-	int dt<-rnd(60);
+	int dt<-rnd(160);
 	float Mostique<-10.0 update:true;
 	float MostiqueI<-1.0 update:true;
 	float Mostique_sain ;
 	birds my_Birds <- birds;
 	int nb_birds;
-	int nb_birds_infected;
+	int nb_birds_infected<-2;
 	int nb_birds_sain;
 		    	
 			//Generate 24 Mos
@@ -187,7 +187,8 @@ species Region {
 		   }		 
 		   reflex solving{
 		   solve MD method: #rk4 step_size: dt;
-		   return self.Mostique;
+		   return Mostique;
+	
 		   }
 		    
 	    	//Infected Mosquitoes	
@@ -214,52 +215,38 @@ species Region {
 }	
 experiment WNV type: gui {
 parameter "Total number of brids: " var: nb_birds_total min: 1 max: 250 category: "Toatl Nomber of Brids" ;
-parameter "Number of migration brids: " var: nb_birds_migration min: 1 max: 200 category: "Toatl Nomber of Brids" ;
+parameter "Number of migration brids: " var: nb_birds_migration min: 1 max: 200 category: "Number of migration brids" ;
 parameter "Shapefile for the Tunisie Map:" var: provinces_shp_file category: "GIS" ;
 parameter "minimal speed" var: bird_speed_min category: "Speed Birds" min: 10 #km/#h ;
 parameter "maximal speed" var: bird_speed_max category: "Speed Birds" max: 60 #km/#h;
 			
 output {	
-	monitor "Nombre of Intial birds" value: nb_birds_init;
-	monitor "Nombre of Total Birds" value: nb_birds_total;
-	monitor "Nombre of Mosquitoes" value: MostiqueGlobal ; //nb_mosquitoes ;
-	monitor "Nombre of Infected Mosquitoes" value: MostiqueGlobalInfected ; //nb_mosquitoes ;
-	monitor "Nombre of Infected Birds" value: birds count (each.is_infected) color: #red;
+	monitor "Number of Intial birds" value: nb_birds_init;
+	monitor "Number of Total Birds" value: nb_birds_total;
+	//monitor "Nombre of Mosquitoes" value: MostiqueGlobal ; //nb_mosquitoes ;
+	//monitor "Nombre of Infected Mosquitoes" value: MostiqueGlobalInfected ; //nb_mosquitoes ;
+	monitor "Nombre of Mosquitoes" value: Region count (each.Mostique)color: #gray;
+	monitor "Number of Infected Birds" value: birds count (each.is_infected) color: #red;
 	
-	
-    display info_display  type:opengl {
+	 display info_display  type:opengl{
         species birds ;
         species Region ;
     }
     display chart_display refresh: every(50 #cycles) {
             chart "Disease spreading" type: series {
-                data "Infected Mosquitoes" value: MostiqueGlobalInfected color: #orange;
+               //data "Infected Mosquitoes" value: MostiqueGlobalInfected color: #orange;
                 data "infected Birds" value: birds count (each.is_infected) color: #red;
             }
-            }
+           }
     display "Statistic par région" {   
-			chart 'Nord EST' type: series {
+			chart 'Ariana' type: series {
 				Region r1 <-first(Region where (each.Nomregion = 'Tunis'));
 				Region r2 <-first(Region where (each.Nomregion = 'Ariana'));
-				//Region r3 <-first(Region where (each.Nomregion = 'Manubah'));
-				//Region r4 <-first(Region where (each.Nomregion = 'Ben Arous (Tunis Sud)'));
-				//Region r5 <-first(Region where (each.Nomregion = 'Zaghouan'));
-			//	Region r6 <-first(Region where (each.Nomregion = 'Nabeul')); 
-				//data "Nombre Mos Infected Tunis" value: r1.MostiqueI  color: #pink;
-				data "Nombre Mos Tunis" value: r1.Mostique  color: #orange marker_shape:  marker_circle;
-				data "Nombre Mos Ariana" value: r2.Mostique  color: #green marker_shape:  marker_circle;
-			
-			}
-			/*chart 'Manubah' type: series {
-				Region r1 <- first(Region where (each.Nomregion = 'Tunis'));
-				data "Nombre Mos Tunis" value: r1.Mostique color: #pink;
-				//data "Somme Mos Tunis" value: sum(r1.Mostique) color: #red;
-				//data "Somme Mos Infected Tunis" value:Region count(each.Mostique) color: #green;
-				}*/
-			
+				data "Number of Mosquitoes In Ariana" value: r2.Mostique  color: #green marker_shape:  marker_circle;
+
+			}	
 
 }
-
 }
 }
 
